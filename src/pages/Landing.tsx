@@ -34,7 +34,7 @@ export default function Landing() {
           <p className="price">$79 <small>once, forever (v1.x)</small></p>
           <p className="muted">Unlimited conversions · Full SVG · DXF · Vector PDF · PNG up to 3x · Batch ZIP (20 images) · 3 devices · 14-day refunds</p>
           <p><a className="btn btn-primary" href="#/activate">Get VectorNest — $79</a></p>
-          <p className="small muted">Checkout via Creem. Your license key is emailed automatically.</p>
+          <p className="small muted">Checkout via Creem. Your receipt is emailed automatically.</p>
         </div>
         <div className="card">
           <h3>Why one payment beats a subscription</h3>
@@ -61,7 +61,7 @@ export default function Landing() {
 
       <h2>Frequently asked questions</h2>
       <div className="faq">
-        <details><summary>Is my data uploaded anywhere?</summary><p>No. Tracing and every export run in your browser, on your CPU. The only network request VectorNest makes is the license check when you activate or re-validate — and it sends only your license key, never images. Watch the Network tab while you trace.</p></details>
+        <details><summary>Is my data uploaded anywhere?</summary><p>No. Tracing and every export run in your browser, on your CPU. The only network requests VectorNest makes are the purchase check when you unlock or restore — and they send only your checkout ID or email, never images. Watch the Network tab while you trace.</p></details>
         <details><summary>What images work best?</summary><p>Clean, high-contrast logos, line art and flat-colour designs. The tool is for logos, line art and designs — not photos. A crisp source gives a crisp vector; a blurry low-res JPG will trace blurry.</p></details>
         <details><summary>Which machines does it support?</summary><p>Anything that reads SVG or DXF: Cricut and Silhouette (SVG), Glowforge, xTool and Omtech lasers (SVG/DXF), and most CNC and sign software (DXF R12).</p></details>
         <details><summary>What does the free tier include?</summary><p>3 conversions per day, all presets, a watermarked SVG preview and PNG export up to 1024px. Paid unlocks unlimited conversions, clean SVG, DXF, vector PDF, PNG up to 3x, and batch ZIP.</p></details>

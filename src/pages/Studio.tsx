@@ -9,7 +9,7 @@ import { svgToDxf, type DxfUnit } from '../lib/dxfExport';
 import { pdfToBlob } from '../lib/pdfExport';
 import { svgToPngBlob, cappedScale } from '../lib/pngExport';
 import { downloadBlob, downloadText, baseName } from '../lib/download';
-import { freeRemaining, consumeFreeConversion } from '../lib/license';
+import { freeRemaining, consumeFreeConversion } from '../lib/purchase';
 
 interface QueueItem {
   id: string;
@@ -62,7 +62,7 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
     // Called after the item's image is loaded. Runs the (synchronous) trace
     // in a setTimeout so the "Tracing…" state paints first.
     if (!paidNow && freeRemaining() <= 0) {
-      patchItem(item.id, { status: 'error', error: 'Free limit reached — 3 conversions a day. Activate a paid license for unlimited conversions.' });
+      patchItem(item.id, { status: 'error', error: 'Free limit reached — 3 conversions a day. Get paid access for unlimited conversions.' });
       return;
     }
     patchItem(item.id, { status: 'tracing', error: null });
@@ -170,17 +170,17 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
     if (!selected?.svg) return;
     const out = paid ? cleanSvg(selected.svg) : watermarkedSvg(selected.svg);
     downloadText(out, `${baseName(selected.name)}-${presetId}.svg`, 'image/svg+xml');
-    if (!paid) setNotice('Free SVG includes a small watermark text element. Activate for clean, production-ready SVG.');
+    if (!paid) setNotice('Free SVG includes a small watermark text element. Get access for clean, production-ready SVG.');
   };
 
   const exportDxf = () => {
-    if (!paid) { setError('DXF export is a paid feature. Activate your license to unlock it.'); return; }
+    if (!paid) { setError('DXF export is a paid feature. Get access to unlock it.'); return; }
     if (!selected?.svg) return;
     downloadText(svgToDxf(selected.svg, dxfUnit), `${baseName(selected.name)}-${presetId}.dxf`, 'application/dxf');
   };
 
   const exportPdf = () => {
-    if (!paid) { setError('Vector PDF export is a paid feature. Activate your license to unlock it.'); return; }
+    if (!paid) { setError('Vector PDF export is a paid feature. Get access to unlock it.'); return; }
     if (!selected?.svg) return;
     downloadBlob(pdfToBlob(selected.svg), `${baseName(selected.name)}-${presetId}.pdf`);
   };
@@ -189,7 +189,7 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
     if (!selected?.svg) return;
     try {
       const scale = cappedScale(selected.svg, pngScale, paid);
-      if (scale < pngScale) setNotice(`Free PNG is capped at 1024px on the longest edge — exported at ${scale.toFixed(2)}x. Activate for up to 3x.`);
+      if (scale < pngScale) setNotice(`Free PNG is capped at 1024px on the longest edge — exported at ${scale.toFixed(2)}x. Get access for up to 3x.`);
       const blob = await svgToPngBlob(selected.svg, scale, pngBg);
       downloadBlob(blob, `${baseName(selected.name)}-${presetId}.png`);
     } catch (e) {
@@ -198,7 +198,7 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
   };
 
   const exportBatchZip = async () => {
-    if (!paid) { setError('Batch ZIP is a paid feature. Activate your license to unlock it.'); return; }
+    if (!paid) { setError('Batch ZIP is a paid feature. Get access to unlock it.'); return; }
     if (queue.length === 0) return;
     cancelRef.current = false;
     setBatch({ done: 0, total: queue.length });
@@ -226,7 +226,7 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
     setBatch(null);
   };
 
-  // Keep the paid flag fresh if the license changed in another tab.
+  // Keep the paid flag fresh if paid access changed in another tab.
   useEffect(() => {
     const onStorage = () => onPaidChange(freeRemaining() === Infinity);
     window.addEventListener('storage', onStorage);
@@ -407,7 +407,7 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
           {batch
             ? <div><div className="progress"><div style={{ width: `${(batch.done / batch.total) * 100}%` }} /></div><p className="small">{batch.done}/{batch.total} traced</p><button className="btn btn-sm" onClick={cancelBatch}>Cancel batch</button></div>
             : <button className="btn btn-block" onClick={() => void exportBatchZip()} disabled={queue.length === 0 || !paid} title={paid ? '' : 'Paid feature'}>Download batch ZIP (SVG){!paid && ' 🔒'}</button>}
-          {!paid && <p className="small muted">DXF, PDF and batch ZIP are paid. <a href="#/activate">Activate — $79 once</a>.</p>}
+          {!paid && <p className="small muted">DXF, PDF and batch ZIP are paid. <a href="#/activate">Get access — $79 once</a>.</p>}
         </aside>
       </div>
     </div>

@@ -4,7 +4,7 @@ import Studio from './pages/Studio';
 import Benchmark from './pages/Benchmark';
 import Activate from './pages/Activate';
 import Legal from './pages/Legal';
-import { isPaid, needsRevalidation, revalidateLicense } from './lib/license';
+import { isPaid, migrateLegacyLicense } from './lib/purchase';
 
 export type Route = '' | 'app' | 'benchmark' | 'activate' | 'privacy' | 'terms' | 'license';
 
@@ -27,11 +27,10 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  // On load: if a paid license is past its 7-day window, re-validate silently.
+  // One-time cleanup: drop any license-key data left by an earlier version.
+  // Paid access is now a local flag set by /api/verify-purchase (no keys).
   useEffect(() => {
-    if (needsRevalidation()) {
-      revalidateLicense().then((ok) => setPaid(ok));
-    }
+    migrateLegacyLicense();
   }, []);
 
   const nav = (label: string, href: string, active: boolean) => (
@@ -45,7 +44,7 @@ export default function App() {
         <nav>
           {nav('Studio', '#/app', route === 'app')}
           {nav('Benchmark', '#/benchmark', route === 'benchmark')}
-          {nav('Activate', '#/activate', route === 'activate')}
+          {nav('Get access', '#/activate', route === 'activate')}
           {nav('Privacy', '#/privacy', route === 'privacy')}
         </nav>
         <div className="spacer" />

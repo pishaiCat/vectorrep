@@ -40,6 +40,26 @@ export async function creemPost(apiKey, path, body) {
   return { ok: res.ok, status: res.status, data };
 }
 
+export async function creemGet(apiKey, path) {
+  let res;
+  try {
+    res = await fetch(`${creemBaseUrl(apiKey)}${path}`, {
+      method: 'GET',
+      headers: { 'x-api-key': apiKey },
+    });
+  } catch {
+    return { ok: false, status: 0, data: null };
+  }
+  let data = null;
+  try {
+    const text = await res.text();
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = null;
+  }
+  return { ok: res.ok, status: res.status, data };
+}
+
 export function isMethod(req, res, method) {
   if (req.method !== method) {
     res.status(405).json({ error: `Method not allowed. Use ${method}.` });
@@ -48,15 +68,3 @@ export function isMethod(req, res, method) {
   return true;
 }
 
-export function normalizeLicense(data) {
-  if (!data || typeof data !== 'object') return { valid: false, instance_id: null };
-  const valid =
-    data.valid === true ||
-    data.is_valid === true ||
-    data.status === 'valid' ||
-    data.status === 'active' ||
-    (data.license && (data.license.status === 'valid' || data.license.status === 'active'));
-  const instance_id =
-    data.instance_id ?? data.instanceId ?? (data.instance && data.instance.id) ?? (data.license && data.license.instance_id) ?? null;
-  return { valid: Boolean(valid), instance_id: typeof instance_id === 'string' ? instance_id : null };
-}

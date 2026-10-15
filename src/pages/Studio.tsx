@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import JSZip from 'jszip';
 import {
   PRESETS, getPreset, traceImageData, loadImageFile, loadImageUrl,
@@ -54,6 +54,13 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const selected = queue.find((q) => q.id === selectedId) ?? null;
+  // Preview must render the NORMALIZED svg (width + height + viewBox), not
+  // the tracer's raw output (fixed width/height, no viewBox). Without a
+  // viewBox the browser has no aspect ratio, so the max-width/max-height
+  // CSS cannot scale the svg down — it renders at intrinsic pixel size,
+  // overflows the pane, and only a clipped fragment ("half vectors") is
+  // visible. cleanSvg is the same normalization the SVG export uses.
+  const previewSvg = useMemo(() => (selected?.svg ? cleanSvg(selected.svg) : ''), [selected?.svg]);
   const patchItem = useCallback((id: string, patch: Partial<QueueItem>) => {
     setQueue((prev) => prev.map((q) => (q.id === id ? { ...q, ...patch } : q)));
   }, []);
@@ -327,7 +334,7 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
                   <div className="pane-label">Vector {selected.svg ? `· ${countPaths(selected.svg)} paths` : ''}</div>
                   <div className="pane">
                     {selected.svg
-                      ? <div className="scaled svg-holder" style={{ transform: `scale(${zoom})` }} dangerouslySetInnerHTML={{ __html: selected.svg }} />
+                      ? <div className="scaled svg-holder" style={{ transform: `scale(${zoom})` }} dangerouslySetInnerHTML={{ __html: previewSvg }} />
                       : <span className="muted small">{selected.status === 'tracing' ? 'Tracing…' : 'No trace yet'}</span>}
                   </div>
                 </div>
@@ -339,7 +346,7 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
               <div className="pane-label">Vector {selected.svg ? `· ${countPaths(selected.svg)} paths` : ''}</div>
               <div className="pane">
                 {selected.svg
-                  ? <div className="scaled svg-holder" style={{ transform: `scale(${zoom})` }} dangerouslySetInnerHTML={{ __html: selected.svg }} />
+                  ? <div className="scaled svg-holder" style={{ transform: `scale(${zoom})` }} dangerouslySetInnerHTML={{ __html: previewSvg }} />
                   : <span className="muted small">{selected.status === 'tracing' ? 'Tracing…' : 'No trace yet'}</span>}
               </div>
             </div>

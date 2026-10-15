@@ -22,6 +22,13 @@ export function firebaseInitStage() {
   return initStage;
 }
 
+// Safe diagnostic: the init error's message only (library error text —
+// never contains key material). Temporary: used to pin down why a
+// service-account value is rejected; remove once the env value is fixed.
+export function firebaseInitError() {
+  return initError ? initError.message : null;
+}
+
 function tryParseJson(raw) {
   try {
     return JSON.parse(raw);

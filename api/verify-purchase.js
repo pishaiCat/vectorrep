@@ -15,7 +15,7 @@
  * Always returns JSON. A refunded purchase returns paid: false.
  */
 import { isMethod, requireEnv, creemGet } from './_creem.js';
-import { getDb, purchaseRecord, serverTimestamp, isFirebaseConfigured, firebaseInitStage, firebaseInitError } from './_firebase.js';
+import { getDb, purchaseRecord, serverTimestamp, isFirebaseConfigured, firebaseInitStage } from './_firebase.js';
 
 const PAID_STATUSES = new Set(['completed', 'paid', 'success', 'succeeded', 'active']);
 
@@ -120,7 +120,7 @@ export default async function handler(req, res) {
         // Firestore unavailable: fall through to the Creem check for
         // checkout_id; for email-only lookups we cannot verify.
         if (!checkoutId) {
-          res.status(200).json({ paid: false, error: 'Purchase records are temporarily unavailable. Please try again.', stage: firebaseInitStage(), detail: firebaseInitError() });
+          res.status(200).json({ paid: false, error: 'Purchase records are temporarily unavailable. Please try again.', stage: firebaseInitStage() });
           return;
         }
       }

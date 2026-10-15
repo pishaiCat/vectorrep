@@ -10,7 +10,8 @@
  * or malformed, getDb() throws a clear Error — callers must catch it and
  * return JSON (never HTML, never a stack trace).
  */
-import admin from 'firebase-admin';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
 let db = null;
 let initError = null;
@@ -76,7 +77,7 @@ export function isFirebaseConfigured() {
 
 /** Firestore server-timestamp sentinel for createdAt/updatedAt. */
 export function serverTimestamp() {
-  return admin.firestore.FieldValue.serverTimestamp();
+  return FieldValue.serverTimestamp();
 }
 
 /**
@@ -99,10 +100,10 @@ export function getDb() {
     }
     // firebase-admin keeps a global app registry; reuse it across warm
     // invocations instead of re-initializing.
-    if (admin.apps.length === 0) {
+    if (getApps().length === 0) {
       try {
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
+        initializeApp({
+          credential: cert(serviceAccount),
           projectId,
         });
       } catch {
@@ -110,7 +111,7 @@ export function getDb() {
         throw new Error('Firebase credential rejected (service-account key invalid).');
       }
     }
-    db = admin.firestore();
+    db = getFirestore();
     initStage = 'ok';
     return db;
   } catch (e) {

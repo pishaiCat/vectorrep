@@ -236,8 +236,8 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
   const zoomPct = Math.round(zoom * 100);
 
   return (
-    <div className="container" style={{ maxWidth: 1440 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+    <div className="container studio-page">
+      <div className="studio-head">
         <h1 style={{ margin: 0 }}>Studio</h1>
         {paid
           ? <span className="badge-paid">Paid — unlimited conversions</span>
@@ -248,9 +248,9 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
       {notice && <div className="notice" role="status">{notice} <button className="btn btn-sm" onClick={() => setNotice(null)}>Dismiss</button></div>}
       {error && <div className="error" role="alert">{error} <button className="btn btn-sm" onClick={() => setError(null)}>Dismiss</button></div>}
 
-      <div className="studio" style={{ marginTop: 16 }}>
+      <div className="studio">
         {/* Left: dropzone + queue */}
-        <div>
+        <aside className="studio-col studio-col--left">
           <div
             className={`dropzone ${dragging ? 'dragging' : ''}`}
             onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
@@ -288,10 +288,10 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
               <button key={s.name} className="btn btn-sm" onClick={() => void addSample(s)}>{s.label}</button>
             ))}
           </div>
-        </div>
+        </aside>
 
         {/* Center: preview */}
-        <div className="preview-wrap">
+        <section className="studio-col studio-col--main preview-wrap">
           <div className="preview-head">
             <div>
               <button className={`btn btn-sm ${viewMode === 'side' ? 'btn-primary' : ''}`} onClick={() => setViewMode('side')}>Side by side</button>{' '}
@@ -350,10 +350,10 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
               {!paid && ' · Free SVG download includes a small watermark.'}
             </p>
           )}
-        </div>
+        </section>
 
         {/* Right: presets + exports */}
-        <div>
+        <aside className="studio-col studio-col--side studio-panel">
           <h3 style={{ marginTop: 0 }}>Preset</h3>
           {PRESETS.map((p) => (
             <button key={p.id} className={`preset-btn ${presetId === p.id ? 'active' : ''}`} onClick={() => applyPreset(p.id)}>
@@ -408,7 +408,7 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
             ? <div><div className="progress"><div style={{ width: `${(batch.done / batch.total) * 100}%` }} /></div><p className="small">{batch.done}/{batch.total} traced</p><button className="btn btn-sm" onClick={cancelBatch}>Cancel batch</button></div>
             : <button className="btn btn-block" onClick={() => void exportBatchZip()} disabled={queue.length === 0 || !paid} title={paid ? '' : 'Paid feature'}>Download batch ZIP (SVG){!paid && ' 🔒'}</button>}
           {!paid && <p className="small muted">DXF, PDF and batch ZIP are paid. <a href="#/activate">Activate — $79 once</a>.</p>}
-        </div>
+        </aside>
       </div>
     </div>
   );

@@ -23,6 +23,21 @@ const LICENSE_KEY = 'vectornest_license';
 const INSTANCE_KEY = 'vectornest_instance_id';
 const FREE_COUNTER_KEY = 'vectornest_free_usage';
 
+/** JSON-safe fetch: never throws "Unexpected token" on HTML error pages.
+ *  Returns { ok, status, data } where data is parsed JSON or null. */
+export async function fetchJson(url: string, init?: RequestInit): Promise<{ ok: boolean; status: number; data: Record<string, unknown> | null }> {
+  const res = await fetch(url, init);
+  let data: Record<string, unknown> | null = null;
+  try {
+    const text = await res.text();
+    data = text ? (JSON.parse(text) as Record<string, unknown>) : null;
+  } catch {
+    data = null;
+  }
+  return { ok: res.ok, status: res.status, data };
+}
+
+const PAYMENTS_DOWN = 'Payments are temporarily unavailable — please try again or contact support.';
 export const FREE_DAILY_LIMIT = 3;
 export const REVALIDATE_DAYS = 7;
 
@@ -94,16 +109,17 @@ export async function revalidateLicense(): Promise<boolean> {
   const lic = readLicense();
   if (!lic) return false;
   try {
-    const res = await fetch('/api/verify-license', {
+    const { ok, data } = await fetchJson('/api/verify-license', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ key: lic.key, instance_id: lic.instanceId }),
     });
-    const data = (await res.json()) as { valid?: boolean; instance_id?: string };
-    if (res.ok && data.valid) {
-      saveLicense(lic.key, data.instance_id ?? lic.instanceId);
+    const valid = (data?.valid as boolean | undefined) ?? false;
+    if (ok && valid) {
+      saveLicense(lic.key, (data?.instance_id as string | undefined) ?? lic.instanceId);
       return true;
     }
+    if (data === null) return true; // non-JSON / server-down: keep local paid state
     clearLicense();
     return false;
   } catch {
@@ -116,16 +132,17 @@ export async function activateLicense(key: string): Promise<StoredLicense> {
   const trimmed = key.trim();
   if (!trimmed) throw new Error('Paste your license key first.');
   const instanceId = getOrCreateInstanceId();
-  const res = await fetch('/api/verify-license', {
+  const { ok, data } = await fetchJson('/api/verify-license', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ key: trimmed, instance_name: `VectorNest — ${navigator.userAgent.includes('Mac') ? 'Mac' : 'Device'} ${instanceId.slice(0, 8)}` }),
   });
-  const data = (await res.json()) as { valid?: boolean; instance_id?: string; error?: string };
-  if (!res.ok || !data.valid) {
-    throw new Error(data.error ?? 'That key could not be verified. Check it and try again.');
+  if (data === null) throw new Error(PAYMENTS_DOWN);
+  const valid = (data.valid as boolean | undefined) ?? false;
+  if (!ok || !valid) {
+    throw new Error((data.error as string | undefined) ?? 'That key could not be verified. Check it and try again.');
   }
-  return saveLicense(trimmed, data.instance_id ?? instanceId);
+  return saveLicense(trimmed, (data.instance_id as string | undefined) ?? instanceId);
 }
 
 /** Deactivate this device server-side and clear the local license. */

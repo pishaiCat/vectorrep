@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { activateLicense, deactivateLicense, getStoredLicense, isPaid } from '../lib/license';
+import { activateLicense, deactivateLicense, getStoredLicense, isPaid, fetchJson } from '../lib/license';
 
 export default function Activate({ paid, onPaidChange }: { paid: boolean; onPaidChange: (v: boolean) => void }) {
   const [key, setKey] = useState('');
@@ -12,16 +12,16 @@ export default function Activate({ paid, onPaidChange }: { paid: boolean; onPaid
     setCheckoutBusy(true);
     setMessage(null);
     try {
-      const res = await fetch('/api/checkout', {
+      const { ok, data } = await fetchJson('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
-      const data = (await res.json()) as { checkout_url?: string; error?: string };
-      if (!res.ok || !data.checkout_url) {
-        throw new Error(data.error ?? 'Checkout is not configured yet.');
+      const checkoutUrl = data?.checkout_url as string | undefined;
+      if (!ok || !checkoutUrl) {
+        throw new Error((data?.error as string | undefined) ?? 'Payments are temporarily unavailable — please try again or contact support.');
       }
-      window.location.href = data.checkout_url;
+      window.location.href = checkoutUrl;
     } catch (e) {
       setMessage({ kind: 'error', text: e instanceof Error ? e.message : 'Checkout failed.' });
     } finally {

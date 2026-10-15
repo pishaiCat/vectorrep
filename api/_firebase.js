@@ -14,6 +14,13 @@ import admin from 'firebase-admin';
 
 let db = null;
 let initError = null;
+// Safe diagnostic only: which init stage failed ('parse' | 'credential' | 'ok').
+// Never contains secret material — safe to surface in a JSON error response.
+let initStage = 'not_started';
+
+export function firebaseInitStage() {
+  return initStage;
+}
 
 function tryParseJson(raw) {
   try {
@@ -44,6 +51,15 @@ function parseServiceAccount() {
     parsed = tryParseJson(repaired);
   }
   if (!parsed || typeof parsed !== 'object' || typeof parsed.private_key !== 'string') return null;
+  // Repair a private_key whose PEM newlines were lost in the paste
+  // (single-line body): re-wrap the base64 body at 64 chars.
+  const key = parsed.private_key;
+  if (key.includes('BEGIN PRIVATE KEY') && !key.includes('\n')) {
+    const body = key.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '');
+    if (/^[A-Za-z0-9+/=]+$/.test(body)) {
+      parsed.private_key = `-----BEGIN PRIVATE KEY-----\n${body.match(/.{1,64}/g).join('\n')}\n-----END PRIVATE KEY-----\n`;
+    }
+  }
   return parsed;
 }
 
@@ -66,23 +82,32 @@ export function getDb() {
   try {
     const serviceAccount = parseServiceAccount();
     if (!serviceAccount) {
+      initStage = 'parse';
       throw new Error('Firebase is not configured (FIREBASE_SERVICE_ACCOUNT missing or invalid).');
     }
     const projectId = process.env.FIREBASE_PROJECT_ID || serviceAccount.project_id;
     if (!projectId) {
+      initStage = 'parse';
       throw new Error('Firebase is not configured (FIREBASE_PROJECT_ID missing).');
     }
     // firebase-admin keeps a global app registry; reuse it across warm
     // invocations instead of re-initializing.
     if (admin.apps.length === 0) {
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        projectId,
-      });
+      try {
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+          projectId,
+        });
+      } catch {
+        initStage = 'credential';
+        throw new Error('Firebase credential rejected (service-account key invalid).');
+      }
     }
     db = admin.firestore();
+    initStage = 'ok';
     return db;
   } catch (e) {
+    if (initStage === 'not_started') initStage = 'credential';
     initError = e instanceof Error ? e : new Error('Firebase failed to initialize.');
     throw initError;
   }

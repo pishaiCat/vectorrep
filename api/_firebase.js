@@ -15,16 +15,36 @@ import admin from 'firebase-admin';
 let db = null;
 let initError = null;
 
-function parseServiceAccount() {
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT || '';
-  if (!raw) return null;
+function tryParseJson(raw) {
   try {
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object' || typeof parsed.private_key !== 'string') return null;
-    return parsed;
+    return JSON.parse(raw);
   } catch {
     return null;
   }
+}
+
+function parseServiceAccount() {
+  let raw = (process.env.FIREBASE_SERVICE_ACCOUNT || '').trim();
+  if (!raw) return null;
+  // Tolerate the value being pasted with surrounding quotes.
+  if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
+    raw = raw.slice(1, -1);
+  }
+  let parsed = tryParseJson(raw);
+  // Tolerate double-encoded JSON (a JSON string containing JSON).
+  if (typeof parsed === 'string') parsed = tryParseJson(parsed);
+  if (!parsed) {
+    // Tolerate a paste that turned the private_key's \n escapes into real
+    // line breaks inside the string (invalid JSON): re-escape newlines and
+    // tabs inside the private_key value, then parse again.
+    const repaired = raw.replace(
+      /("private_key"\s*:\s*")([\s\S]*?)("\s*[,}])/,
+      (_m, p1, p2, p3) => p1 + p2.replace(/\r\n?|\n/g, '\\n').replace(/\t/g, '\\t') + p3,
+    );
+    parsed = tryParseJson(repaired);
+  }
+  if (!parsed || typeof parsed !== 'object' || typeof parsed.private_key !== 'string') return null;
+  return parsed;
 }
 
 export function isFirebaseConfigured() {

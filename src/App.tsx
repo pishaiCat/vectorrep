@@ -67,6 +67,7 @@ export default function App() {
         <a href="#/terms">Terms</a>
         <a href="#/license">License</a>
         <a href="#/benchmark">Benchmark</a>
+        <a href="mailto:muaviathegreat@gmail.com">Support: muaviathegreat@gmail.com</a>
       </footer>
     </>
   );

@@ -26,6 +26,8 @@ export default function Legal({ page }: { page: 'privacy' | 'terms' | 'license' 
           <li>Purchase records for paid customers only (checkout/order id, email, status, product) — the minimum needed to confirm and restore a purchase. No images, ever.</li>
         </ul>
         <p>Nothing else. There are no accounts, no cloud library, no tracking cookies. Verify it yourself: open the Network tab in DevTools and trace an image — you will see zero requests.</p>
+        <h2>Contact</h2>
+        <p>Questions, purchases, or refund requests: <a href="mailto:muaviathegreat@gmail.com">muaviathegreat@gmail.com</a>.</p>
       </div>
     );
   }
@@ -41,7 +43,7 @@ export default function Legal({ page }: { page: 'privacy' | 'terms' | 'license' 
         <h2>Accuracy</h2>
         <p>Tracing is a best-effort conversion. Output quality depends on your source image: clean, high-contrast logos trace well; blurry photos and dense hatching may not. The free tier exists so you can judge quality before paying. Always test-cut or test-engrave before running production.</p>
         <h2>Refunds</h2>
-        <p>14-day refunds, no questions asked. Contact support with your order email.</p>
+        <p>14-day refunds, no questions asked. Contact support at <a href="mailto:muaviathegreat@gmail.com">muaviathegreat@gmail.com</a> with your order email.</p>
         <h2>Availability</h2>
         <p>The app is provided “as is”, without warranties. We may update presets or the tracing engine; your purchase covers v1.x (see License).</p>
         <h2>Fair use</h2>
@@ -64,7 +66,9 @@ export default function Legal({ page }: { page: 'privacy' | 'terms' | 'license' 
         <li>DXF export, vector PDF export, PNG up to 3x, batch ZIP of up to 20 images</li>
       </ul>
       <h2>Refunds</h2>
-      <p>14 days, no questions asked. After a refund, paid access is removed — restore checks will return unpaid and the app returns to the free tier.</p>
+      <p>14 days, no questions asked. After a refund, paid access is removed — restore checks will return unpaid and the app returns to the free tier. Request a refund at <a href="mailto:muaviathegreat@gmail.com">muaviathegreat@gmail.com</a>.</p>
+      <h2>Contact</h2>
+      <p>Support for purchases, refunds, and anything else: <a href="mailto:muaviathegreat@gmail.com">muaviathegreat@gmail.com</a>.</p>
       <h2>What you may not do</h2>
       <p>The app itself may not be resold, repackaged or redistributed.</p>
     </div>

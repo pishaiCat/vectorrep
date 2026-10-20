@@ -4,12 +4,13 @@ import {
   PRESETS, getPreset, traceImageData, loadImageFile, loadImageUrl,
   validateFile, type PresetId, type TraceOptions, type LoadedImage,
 } from '../lib/tracer';
-import { cleanSvg, watermarkedSvg, countPaths } from '../lib/svgExport';
+import { cleanSvg, countPaths } from '../lib/svgExport';
 import { svgToDxf, type DxfUnit } from '../lib/dxfExport';
 import { pdfToBlob } from '../lib/pdfExport';
 import { svgToPngBlob, cappedScale } from '../lib/pngExport';
 import { downloadBlob, downloadText, baseName } from '../lib/download';
 import { freeRemaining, consumeFreeConversion } from '../lib/purchase';
+import { useAuth } from '../lib/auth';
 
 interface QueueItem {
   id: string;
@@ -35,6 +36,9 @@ let idCounter = 0;
 const nextId = () => `q${++idCounter}-${Date.now()}`;
 
 export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidChange: (v: boolean) => void }) {
+  // `paid` = effective access (active account plan OR guest device unlock).
+  // The account plan details drive the badge text.
+  const { plan, planActive, planExpiresAt } = useAuth();
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [presetId, setPresetId] = useState<PresetId>('laser-engrave');
@@ -69,7 +73,7 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
     // Called after the item's image is loaded. Runs the (synchronous) trace
     // in a setTimeout so the "Tracing…" state paints first.
     if (!paidNow && freeRemaining() <= 0) {
-      patchItem(item.id, { status: 'error', error: 'Free limit reached — 3 conversions a day. Get paid access for unlimited conversions.' });
+      patchItem(item.id, { status: 'error', error: 'Free limit reached — 10 conversions a day. Get a 3-Day Pass ($3.99) or Lifetime ($79) for unlimited conversions.' });
       return;
     }
     patchItem(item.id, { status: 'tracing', error: null });
@@ -175,9 +179,9 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
 
   const exportSvg = () => {
     if (!selected?.svg) return;
-    const out = paid ? cleanSvg(selected.svg) : watermarkedSvg(selected.svg);
-    downloadText(out, `${baseName(selected.name)}-${presetId}.svg`, 'image/svg+xml');
-    if (!paid) setNotice('Free SVG includes a small watermark text element. Get access for clean, production-ready SVG.');
+    // Free SVG is CLEAN — no watermark. Paid value is in DXF/PDF/batch/
+    // larger PNG and no daily cap, not in degrading the SVG.
+    downloadText(cleanSvg(selected.svg), `${baseName(selected.name)}-${presetId}.svg`, 'image/svg+xml');
   };
 
   const exportDxf = () => {
@@ -246,9 +250,13 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
     <div className="container studio-page">
       <div className="studio-head">
         <h1 style={{ margin: 0 }}>Studio</h1>
-        {paid
-          ? <span className="badge-paid">Paid — unlimited conversions</span>
-          : <span className="badge-free">{freeLeft === Infinity ? 'Paid' : `${freeLeft} free conversion${freeLeft === 1 ? '' : 's'} left today`}</span>}
+        {planActive && plan === 'lifetime'
+          ? <span className="badge-paid">Lifetime — unlimited conversions</span>
+          : planActive && plan === 'pass3'
+            ? <span className="badge-paid">3-Day Pass — active{planExpiresAt ? ` until ${new Date(planExpiresAt).toLocaleString()}` : ''}</span>
+            : paid
+              ? <span className="badge-paid">Paid — unlimited conversions (this device)</span>
+              : <span className="badge-free">{freeLeft === Infinity ? 'Paid' : `${freeLeft} free conversion${freeLeft === 1 ? '' : 's'} left today`}</span>}
       </div>
       <p className="muted">Everything runs in your browser. Nothing you drop here is uploaded.</p>
 
@@ -354,7 +362,6 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
           {selected?.status === 'done' && (
             <p className="small muted" style={{ marginTop: 10 }}>
               Traced in {selected.traceMs?.toFixed(0)} ms · {selected.pathCount} paths · {selected.loaded?.width}×{selected.loaded?.height}px
-              {!paid && ' · Free SVG download includes a small watermark.'}
             </p>
           )}
         </section>
@@ -386,7 +393,7 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
 
           <h3>Export</h3>
           <div className="export-grid">
-            <button className="btn" onClick={exportSvg} disabled={!selected?.svg}>SVG {!paid && '(watermarked)'}</button>
+            <button className="btn" onClick={exportSvg} disabled={!selected?.svg}>SVG</button>
             <button className="btn" onClick={exportDxf} disabled={!selected?.svg || !paid} title={paid ? '' : 'Paid feature'}>DXF {!paid && '🔒'}</button>
             <button className="btn" onClick={exportPdf} disabled={!selected?.svg || !paid} title={paid ? '' : 'Paid feature'}>PDF {!paid && '🔒'}</button>
             <button className="btn" onClick={() => void exportPng()} disabled={!selected?.svg}>PNG</button>
@@ -414,7 +421,7 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
           {batch
             ? <div><div className="progress"><div style={{ width: `${(batch.done / batch.total) * 100}%` }} /></div><p className="small">{batch.done}/{batch.total} traced</p><button className="btn btn-sm" onClick={cancelBatch}>Cancel batch</button></div>
             : <button className="btn btn-block" onClick={() => void exportBatchZip()} disabled={queue.length === 0 || !paid} title={paid ? '' : 'Paid feature'}>Download batch ZIP (SVG){!paid && ' 🔒'}</button>}
-          {!paid && <p className="small muted">DXF, PDF and batch ZIP are paid. <a href="#/activate">Get access — $79 once</a>.</p>}
+          {!paid && <p className="small muted">DXF, PDF and batch ZIP need a plan. <a href="#/activate">3-Day Pass $3.99 / Lifetime $79</a>.</p>}
         </aside>
       </div>
     </div>

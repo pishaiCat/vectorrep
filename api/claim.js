@@ -44,6 +44,25 @@ function planForProduct(productId, purchasedAtIso) {
   return null;
 }
 
+/** Never-downgrade merge: claiming must only ever ADD access, never
+ *  remove a better plan the account already has (e.g. a pass claimed by
+ *  checkout_id, then an email lookup that finds nothing). */
+function bestPlan(a, b) {
+  if (a.plan === 'lifetime' || b.plan === 'lifetime') return { plan: 'lifetime', expiresAt: null };
+  if (a.plan === 'pass3' && b.plan === 'pass3') {
+    return { plan: 'pass3', expiresAt: (a.expiresAt || '') >= (b.expiresAt || '') ? a.expiresAt : b.expiresAt };
+  }
+  if (a.plan === 'pass3') return { plan: 'pass3', expiresAt: a.expiresAt };
+  if (b.plan === 'pass3') return { plan: 'pass3', expiresAt: b.expiresAt };
+  return { plan: 'free', expiresAt: null };
+}
+
+async function existingPlan(db, uid) {
+  const snap = await db.collection('users').doc(uid).get();
+  const d = snap.exists ? snap.data() || {} : {};
+  return { plan: typeof d.plan === 'string' ? d.plan : 'free', expiresAt: typeof d.planExpiresAt === 'string' ? d.planExpiresAt : null };
+}
+
 /** Derive { plan, expiresAt } from one purchase record's fields. */
 function planFromRecord(data) {
   if (data.plan === 'pass3') {
@@ -117,15 +136,16 @@ export default async function handler(req, res) {
         }
       }
       if (byCheckout) {
-        const active = byCheckout.plan === 'lifetime'
-          || (byCheckout.expiresAt ? Date.now() < Date.parse(byCheckout.expiresAt) : false);
+        const merged = bestPlan(await existingPlan(db, user.uid), byCheckout);
+        const active = merged.plan === 'lifetime'
+          || (merged.expiresAt ? Date.now() < Date.parse(merged.expiresAt) : false);
         await db.collection('users').doc(user.uid).set({
           email,
-          plan: byCheckout.plan,
-          planExpiresAt: byCheckout.plan === 'pass3' ? byCheckout.expiresAt : null,
+          plan: merged.plan,
+          planExpiresAt: merged.plan === 'pass3' ? merged.expiresAt : null,
           updatedAt: serverTimestamp(),
         }, { merge: true });
-        res.status(200).json({ plan: byCheckout.plan, active, expiresAt: byCheckout.plan === 'pass3' ? byCheckout.expiresAt : null });
+        res.status(200).json({ plan: merged.plan, active, expiresAt: merged.plan === 'pass3' ? merged.expiresAt : null });
         return;
       }
       // checkout_id did not resolve to a paid purchase: fall through to
@@ -158,6 +178,9 @@ export default async function handler(req, res) {
       plan = 'pass3';
       expiresAt = latestPassExpiry;
     }
+    const mergedEmail = bestPlan(await existingPlan(db, user.uid), { plan, expiresAt });
+    plan = mergedEmail.plan;
+    expiresAt = mergedEmail.expiresAt;
     const active = plan === 'lifetime' || (plan === 'pass3' && expiresAt ? Date.now() < Date.parse(expiresAt) : false);
 
     await db.collection('users').doc(user.uid).set({

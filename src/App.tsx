@@ -19,6 +19,7 @@ export function currentRoute(): Route {
   const hash = window.location.hash.replace(/^#\/?/, '');
   const [base] = hash.split('?');
   if (STATIC_ROUTES.includes(base)) return base as Route;
+  if (base.startsWith('free/') && isFreeSlug(base.slice(5))) return base as Route;
   if (isFreeSlug(base)) return `free/${base}` as Route;
   return '';
 }

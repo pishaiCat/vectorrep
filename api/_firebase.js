@@ -115,51 +115,87 @@ export function getDb() {
 }
 
 /**
- * Returns the Firebase Auth (Admin) instance. Ensures the app is
- * initialized by going through getDb() first. Throws if Firebase is not
- * configured — callers return a JSON error.
+ * Firebase ID-token verification WITHOUT firebase-admin/auth.
+ *
+ * Why: the 'firebase-admin/auth' subpath is unusable in these Vercel
+ * functions — a static import crashes module load outright
+ * (FUNCTION_INVOCATION_FAILED, confirmed by bisect), and with a lazy
+ * dynamic import verifyIdToken still rejected freshly minted valid
+ * tokens live on 2026-10-20 (exact failing step not isolated). So
+ * tokens are verified manually,
+ * exactly as the Admin SDK does it: RS256 signature against Google's
+ * public x509 certs for the securetoken system account, plus claim
+ * checks (aud, iss, exp, iat, sub). Uses only node:crypto + fetch.
  */
-let adminAuthFn = null;
-let adminAuthPromise = null;
+import crypto from 'node:crypto';
 
-/** Lazily load firebase-admin/auth. A STATIC top-level import of the
- *  'firebase-admin/auth' subpath crashes module load on Vercel
- *  (FUNCTION_INVOCATION_FAILED for every function importing this file —
- *  confirmed by bisect on 2026-10-20), so it is only ever loaded here,
- *  on first use, via dynamic import. */
-async function loadAdminAuth() {
-  if (adminAuthFn) return adminAuthFn;
-  if (!adminAuthPromise) {
-    adminAuthPromise = import('firebase-admin/auth').then((m) => {
-      adminAuthFn = m.getAuth;
-      return adminAuthFn;
-    });
-  }
-  return adminAuthPromise;
+const CERTS_URL = 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
+let certCache = { certs: null, expiresAt: 0 };
+
+function firebaseProjectId() {
+  if (process.env.FIREBASE_PROJECT_ID) return process.env.FIREBASE_PROJECT_ID;
+  const sa = parseServiceAccount();
+  return sa && typeof sa.project_id === 'string' ? sa.project_id : null;
 }
 
-export async function getAuth() {
-  getDb();
-  const getAdminAuth = await loadAdminAuth();
-  return getAdminAuth();
+async function googleCerts() {
+  if (certCache.certs && Date.now() < certCache.expiresAt) return certCache.certs;
+  const res = await fetch(CERTS_URL);
+  if (!res.ok) throw new Error('Could not fetch Google token certs.');
+  const certs = await res.json();
+  const cc = res.headers.get('cache-control') || '';
+  const m = cc.match(/max-age=(\d+)/);
+  const ttlMs = m ? Number(m[1]) * 1000 : 3600_000;
+  certCache = { certs, expiresAt: Date.now() + Math.min(ttlMs, 3600_000) };
+  return certs;
+}
+
+function b64urlJson(part) {
+  return JSON.parse(Buffer.from(part, 'base64url').toString('utf8'));
+}
+
+/** Verify a Firebase ID token. Returns { uid, email } or null. */
+export async function verifyFirebaseIdToken(token) {
+  try {
+    const projectId = firebaseProjectId();
+    if (!projectId || typeof token !== 'string') return null;
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const header = b64urlJson(parts[0]);
+    const payload = b64urlJson(parts[1]);
+    if (header.alg !== 'RS256' || typeof header.kid !== 'string') return null;
+    const certs = await googleCerts();
+    const pem = certs[header.kid];
+    if (!pem) return null;
+    const publicKey = new crypto.X509Certificate(pem).publicKey;
+    const signed = Buffer.from(`${parts[0]}.${parts[1]}`, 'utf8');
+    const signature = Buffer.from(parts[2], 'base64url');
+    if (!crypto.verify('RSA-SHA256', signed, publicKey, signature)) return null;
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.aud !== projectId) return null;
+    if (payload.iss !== `https://securetoken.google.com/${projectId}`) return null;
+    if (typeof payload.exp !== 'number' || payload.exp <= now) return null;
+    if (typeof payload.iat !== 'number' || payload.iat > now + 300) return null;
+    if (typeof payload.sub !== 'string' || !payload.sub) return null;
+    return {
+      uid: payload.sub,
+      email: typeof payload.email === 'string' ? payload.email : null,
+    };
+  } catch {
+    return null;
+  }
 }
 
 /**
  * Verify a Firebase ID token from an `Authorization: Bearer <token>`
- * header. Returns the decoded token ({ uid, email, ... }) or null when
- * the header is missing/malformed or the token is invalid.
+ * header. Returns { uid, email } or null when the header is
+ * missing/malformed or the token is invalid.
  */
 export async function getAuthUser(req) {
   const header = req.headers?.authorization || req.headers?.Authorization || '';
   const token = typeof header === 'string' && header.startsWith('Bearer ') ? header.slice(7).trim() : '';
   if (!token) return null;
-  try {
-    const auth = await getAuth();
-    const decoded = await auth.verifyIdToken(token);
-    return decoded && typeof decoded.uid === 'string' ? decoded : null;
-  } catch {
-    return null;
-  }
+  return verifyFirebaseIdToken(token);
 }
 
 /** Shape of a purchases/{id} document. Kept here so webhook + verify agree. */

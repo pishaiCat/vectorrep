@@ -17,7 +17,8 @@ export default function Legal({ page }: { page: 'privacy' | 'terms' | 'license' 
         </ul>
         <h2>What is stored in your browser</h2>
         <ul>
-          <li>A paid flag + the email you restored with (localStorage) — this is how the app knows this device is unlocked. No key, no account.</li>
+          <li>A paid flag + the email you restored with (localStorage) — this is how the app knows this device is unlocked. No key.</li>
+          <li>Optional sign-in (Firebase Auth — Google or an email link, no password) exists only so paid access can follow you across devices. If you sign in, we store your email and your plan (Lifetime / 3-Day Pass expiry) — never your images.</li>
           <li>Your free-tier daily conversion counter (localStorage, resets at midnight).</li>
           <li>Benchmark email signups, if you use that form (localStorage only).</li>
         </ul>
@@ -25,7 +26,7 @@ export default function Legal({ page }: { page: 'privacy' | 'terms' | 'license' 
         <ul>
           <li>Purchase records for paid customers only (checkout/order id, email, status, product) — the minimum needed to confirm and restore a purchase. No images, ever.</li>
         </ul>
-        <p>Nothing else. There are no accounts, no cloud library, no tracking cookies. Verify it yourself: open the Network tab in DevTools and trace an image — you will see zero requests.</p>
+        <p>Nothing else. No cloud library, no tracking cookies, and signing in is always optional. Verify it yourself: open the Network tab in DevTools and trace an image — you will see zero requests carrying your image.</p>
         <h2>Contact</h2>
         <p>Questions, purchases, or refund requests: <a href="mailto:muaviathegreat@gmail.com">muaviathegreat@gmail.com</a>.</p>
       </div>
@@ -56,13 +57,17 @@ export default function Legal({ page }: { page: 'privacy' | 'terms' | 'license' 
       <h1>License</h1>
       <p className="muted">Last updated: 15 October 2026. Plain English.</p>
       <h2>What you buy</h2>
-      <p>One payment of $79 buys <strong>VectorNest v1.x, forever</strong>. A future v2 — if one ever exists — is a separate product; nothing about v1.x stops working if v2 ships.</p>
-      <h2>Devices</h2>
-      <p>Paid access unlocks per device and is stored in that browser. Bought on another device? Open the Get access page there and restore with your checkout email — no key needed, no seat limit to manage.</p>
-      <h2>What the purchase unlocks</h2>
+      <p>Two one-time plans — both are single payments, never subscriptions:</p>
       <ul>
-        <li>Unlimited conversions (free tier: 3/day)</li>
-        <li>Clean SVG export (free tier: watermarked preview only)</li>
+        <li><strong>Lifetime — $79:</strong> VectorNest v1.x, forever. A future v2 — if one ever exists — is a separate product; nothing about v1.x stops working if v2 ships.</li>
+        <li><strong>3-Day Pass — $3.99:</strong> everything unlocked for 72 hours from purchase. After it expires, the app returns to the free tier.</li>
+      </ul>
+      <h2>Devices</h2>
+      <p>Sign in (Google or an email link — no password) and claim your purchase once: your plan then works on any device you sign in on. Without an account, a purchase stays unlocked on the device it was bought on. No seat limit to manage.</p>
+      <h2>What a plan unlocks</h2>
+      <ul>
+        <li>Unlimited conversions (free tier: 10/day)</li>
+        <li>Clean SVG export</li>
         <li>DXF export, vector PDF export, PNG up to 3x, batch ZIP of up to 20 images</li>
       </ul>
       <h2>Refunds</h2>

@@ -1,24 +1,27 @@
 /**
  * Paid access + free-tier gating (client-side, localStorage).
  *
- * There are NO license keys. Paid state is a simple local flag set only
- * after the server confirms a purchase:
- *   - returning from Creem checkout → /api/verify-purchase { checkout_id }
- *   - "Restore purchase"            → /api/verify-purchase { email }
+ * There are NO license keys. Paid access comes from two paths:
+ *   - Account plan (primary): sign in (Firebase Auth) → /api/access
+ *     returns the plan; purchases are linked via /api/claim. Works on
+ *     any device. See src/lib/auth.tsx.
+ *   - Guest device flag (fallback): returning from Creem checkout →
+ *     /api/verify-purchase { checkout_id } sets a local flag so the new
+ *     buyer can use the Studio immediately on this device, before (or
+ *     without) signing in. "Restore purchase" by email does the same.
  *
- * Paid access is per-device (stored in this browser). On another device,
- * restore with the email used at checkout. There is no account, no login,
- * and no key to copy or paste. The old license-key storage (if present from
+ * Free tier: 10 conversions/day, localStorage counter (key
+ * 'vectornest_free_daily', midnight reset), SHARED by the Studio and the
+ * free converter pages. Free SVG downloads are CLEAN (no watermark).
+ * Users with an active plan are never counted. This is honest-but-not-
+ * paranoid gating: determined pirates are not the customer; friction
+ * hurts conversion more. The old license-key storage (if present from
  * an earlier version) is cleaned up on load by migrateLegacyLicense().
- *
- * Free tier: 3 conversions/day, localStorage counter, midnight reset.
- * Paid users are never counted. This is honest-but-not-paranoid gating:
- * determined pirates are not the customer; friction hurts conversion more.
  */
 
 const PAID_KEY = 'vectornest_paid';
 const PAID_EMAIL_KEY = 'vectornest_paid_email';
-const FREE_COUNTER_KEY = 'vectornest_free_usage';
+const FREE_COUNTER_KEY = 'vectornest_free_daily';
 
 const LEGACY_LICENSE_KEY = 'vectornest_license';
 const LEGACY_INSTANCE_KEY = 'vectornest_instance_id';
@@ -38,7 +41,7 @@ export async function fetchJson(url: string, init?: RequestInit): Promise<{ ok: 
 }
 
 const PAYMENTS_DOWN = 'Payments are temporarily unavailable — please try again or contact support.';
-export const FREE_DAILY_LIMIT = 3;
+export const FREE_DAILY_LIMIT = 10;
 
 interface FreeUsage {
   date: string; // YYYY-MM-DD (local)
@@ -128,7 +131,7 @@ export async function verifyPurchaseByEmail(email: string): Promise<boolean> {
   return false;
 }
 
-// ---- Free tier: 3 conversions/day, localStorage counter, midnight reset ----
+// ---- Free tier: 10 conversions/day, shared counter, midnight reset ----
 
 function readFreeUsage(): FreeUsage {
   try {

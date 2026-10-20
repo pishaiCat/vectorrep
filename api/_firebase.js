@@ -119,10 +119,29 @@ export function getDb() {
  * initialized by going through getDb() first. Throws if Firebase is not
  * configured — callers return a JSON error.
  */
-export function getAuth() {
-  // Bisect build: firebase-admin/auth static import removed (suspected of
-  // crashing module load on Vercel). Re-enable with a working import form.
-  throw new Error('Auth temporarily disabled (import bisect).');
+let adminAuthFn = null;
+let adminAuthPromise = null;
+
+/** Lazily load firebase-admin/auth. A STATIC top-level import of the
+ *  'firebase-admin/auth' subpath crashes module load on Vercel
+ *  (FUNCTION_INVOCATION_FAILED for every function importing this file —
+ *  confirmed by bisect on 2026-10-20), so it is only ever loaded here,
+ *  on first use, via dynamic import. */
+async function loadAdminAuth() {
+  if (adminAuthFn) return adminAuthFn;
+  if (!adminAuthPromise) {
+    adminAuthPromise = import('firebase-admin/auth').then((m) => {
+      adminAuthFn = m.getAuth;
+      return adminAuthFn;
+    });
+  }
+  return adminAuthPromise;
+}
+
+export async function getAuth() {
+  getDb();
+  const getAdminAuth = await loadAdminAuth();
+  return getAdminAuth();
 }
 
 /**
@@ -134,7 +153,13 @@ export async function getAuthUser(req) {
   const header = req.headers?.authorization || req.headers?.Authorization || '';
   const token = typeof header === 'string' && header.startsWith('Bearer ') ? header.slice(7).trim() : '';
   if (!token) return null;
-  return null; // bisect: auth disabled
+  try {
+    const auth = await getAuth();
+    const decoded = await auth.verifyIdToken(token);
+    return decoded && typeof decoded.uid === 'string' ? decoded : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Shape of a purchases/{id} document. Kept here so webhook + verify agree. */

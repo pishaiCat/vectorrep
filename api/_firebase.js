@@ -12,7 +12,6 @@
  */
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { getAuth as getAdminAuth } from 'firebase-admin/auth';
 
 let db = null;
 let initError = null;
@@ -121,8 +120,9 @@ export function getDb() {
  * configured — callers return a JSON error.
  */
 export function getAuth() {
-  getDb();
-  return getAdminAuth();
+  // Bisect build: firebase-admin/auth static import removed (suspected of
+  // crashing module load on Vercel). Re-enable with a working import form.
+  throw new Error('Auth temporarily disabled (import bisect).');
 }
 
 /**
@@ -134,12 +134,7 @@ export async function getAuthUser(req) {
   const header = req.headers?.authorization || req.headers?.Authorization || '';
   const token = typeof header === 'string' && header.startsWith('Bearer ') ? header.slice(7).trim() : '';
   if (!token) return null;
-  try {
-    const decoded = await getAuth().verifyIdToken(token);
-    return decoded && typeof decoded.uid === 'string' ? decoded : null;
-  } catch {
-    return null;
-  }
+  return null; // bisect: auth disabled
 }
 
 /** Shape of a purchases/{id} document. Kept here so webhook + verify agree. */

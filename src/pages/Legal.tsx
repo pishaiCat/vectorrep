@@ -18,7 +18,7 @@ export default function Legal({ page }: { page: 'privacy' | 'terms' | 'license' 
         <h2>What is stored in your browser</h2>
         <ul>
           <li>A paid flag + the email you restored with (localStorage) — this is how the app knows this device is unlocked. No key.</li>
-          <li>Optional sign-in (Firebase Auth — Google or an email link, no password) exists only so paid access can follow you across devices. If you sign in, we store your email and your plan (Lifetime / 3-Day Pass expiry) — never your images.</li>
+          <li>An account (Firebase Auth — Google, or email + password) is required to buy a plan, so paid access can follow you across devices. If you sign in, we store your email and your plan (Lifetime / 3-Day Pass expiry) — never your images.</li>
           <li>Your free-tier daily conversion counter (localStorage, resets at midnight).</li>
           <li>Benchmark email signups, if you use that form (localStorage only).</li>
         </ul>
@@ -63,7 +63,7 @@ export default function Legal({ page }: { page: 'privacy' | 'terms' | 'license' 
         <li><strong>3-Day Pass — $3.99:</strong> everything unlocked for 72 hours from purchase. After it expires, the app returns to the free tier.</li>
       </ul>
       <h2>Devices</h2>
-      <p>Sign in (Google or an email link — no password) and claim your purchase once: your plan then works on any device you sign in on. Without an account, a purchase stays unlocked on the device it was bought on. No seat limit to manage.</p>
+      <p>Buy while signed in and your plan attaches to your account automatically — it then works on any device you sign in on. No seat limit to manage.</p>
       <h2>What a plan unlocks</h2>
       <ul>
         <li>Unlimited conversions (free tier: 10/day)</li>

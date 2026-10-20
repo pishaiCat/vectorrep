@@ -141,20 +141,34 @@ export default async function handler(req, res) {
         return;
       }
       const fields = extractCheckout(checkout);
-      // Only trust it for our own product when Creem tells us the product.
-      if (env.productId && fields.productId && fields.productId !== env.productId) {
+      // Only trust it for one of OUR products when Creem tells us the
+      // product (lifetime OR the 3-day pass).
+      const passProductId = process.env.CREEM_PRODUCT_ID_PASS3 || '';
+      const isOurs = !fields.productId
+        || (env.productId && fields.productId === env.productId)
+        || (passProductId && fields.productId === passProductId);
+      if (!isOurs) {
         res.status(200).json({ paid: false });
         return;
       }
-      // Cache the confirmed purchase so the next check is a fast Firestore hit.
+      // Cache the confirmed purchase so the next check is a fast Firestore
+      // hit — WITH its plan, so a later claim derives the right access
+      // (a pass cached without a plan would read as lifetime).
       if (isFirebaseConfigured()) {
         try {
           const db = getDb();
           const ref = db.collection('purchases').doc(checkoutId);
           const existing = await ref.get();
           if (!existing.exists) {
+            const isPass = Boolean(passProductId && fields.productId === passProductId);
             await ref.set({
-              ...purchaseRecord({ ...fields, status: 'paid', source: 'verify-purchase' }),
+              ...purchaseRecord({
+                ...fields,
+                status: 'paid',
+                source: 'verify-purchase',
+                plan: isPass ? 'pass3' : 'lifetime',
+                planExpiresAtIso: isPass ? new Date(Date.now() + 72 * 3600 * 1000).toISOString() : null,
+              }),
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
             });

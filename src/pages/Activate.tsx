@@ -19,15 +19,15 @@ type ReturnState = 'idle' | 'verifying' | 'verified' | 'failed';
 type PlanChoice = 'lifetime' | 'pass3';
 
 export default function Activate({ paid, onPaidChange }: { paid: boolean; onPaidChange: (v: boolean) => void }) {
-  const { user, plan, planActive, planExpiresAt } = useAuth();
+  const { user, plan, planActive, planExpiresAt, refreshPlan } = useAuth();
   const [busyPlan, setBusyPlan] = useState<PlanChoice | null>(null);
   const [returnState, setReturnState] = useState<ReturnState>('idle');
   const [message, setMessage] = useState<{ kind: 'error' | 'success'; text: string } | null>(null);
   const autoVerifiedRef = useRef(false);
 
-  // Auto-verify when returning from Creem checkout with a checkout_id.
-  // This sets the guest device flag so the buyer can use the Studio
-  // immediately; signing in + claiming attaches it to their account.
+  // Auto-verify when returning from Creem checkout with a checkout_id,
+  // then auto-claim the purchase onto the signed-in account (buying
+  // requires an account, so the buyer is normally signed in here).
   useEffect(() => {
     if (autoVerifiedRef.current) return;
     const { checkoutId } = returnIdsFromUrl();
@@ -35,11 +35,28 @@ export default function Activate({ paid, onPaidChange }: { paid: boolean; onPaid
     autoVerifiedRef.current = true;
     setReturnState('verifying');
     verifyPurchaseByCheckout(checkoutId)
-      .then((ok) => {
+      .then(async (ok) => {
         if (ok) {
           onPaidChange(true);
           setReturnState('verified');
           setMessage({ kind: 'success', text: 'Payment confirmed — unlocked on this device.' });
+          if (user) {
+            try {
+              const token = await user.getIdToken();
+              const { ok: claimOk } = await fetchJson('/api/claim', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ checkout_id: checkoutId }),
+              });
+              if (claimOk) {
+                await refreshPlan();
+                setMessage({ kind: 'success', text: 'Payment confirmed — your plan is on your account and works on any device you sign in on.' });
+              }
+            } catch {
+              // Device unlock already succeeded; claiming can be retried
+              // from the Account page.
+            }
+          }
         } else {
           setReturnState('failed');
           setMessage({ kind: 'error', text: 'We could not confirm that payment yet. It may still be processing — wait a minute and retry.' });
@@ -53,6 +70,17 @@ export default function Activate({ paid, onPaidChange }: { paid: boolean; onPaid
   }, []);
 
   const buy = async (planChoice: PlanChoice) => {
+    if (!user) {
+      // Account first, then buy (per product decision 2026-10-20).
+      try {
+        sessionStorage.setItem('vectornest_return_to', 'activate');
+      } catch {
+        // ignore
+      }
+      setMessage({ kind: 'error', text: 'Create your account first — it takes a few seconds, then you can buy and your plan attaches to the account automatically.' });
+      window.location.hash = '#/account';
+      return;
+    }
     setBusyPlan(planChoice);
     setMessage(null);
     try {
@@ -115,10 +143,10 @@ export default function Activate({ paid, onPaidChange }: { paid: boolean; onPaid
 
       {justVerified && !user && (
         <div className="card" style={{ marginBottom: 16 }}>
-          <h3 style={{ marginTop: 0 }}>One more step: lock this to your account</h3>
+          <h3 style={{ marginTop: 0 }}>Attach this purchase to your account</h3>
           <p className="muted">
-            Your purchase is unlocked on this device right now. Sign in (Google or an email link — no password)
-            and claim it once, and the same access works on any device you sign in on.
+            Your purchase is unlocked on this device right now. Sign in with the account you
+            want it on and claim it once, and the same access works on any device.
           </p>
           <p>
             <a className="btn btn-primary" href="#/account">Sign in &amp; claim purchase</a>{' '}
@@ -149,6 +177,13 @@ export default function Activate({ paid, onPaidChange }: { paid: boolean; onPaid
         </div>
       ) : (
         <>
+          {!user && (
+            <div className="notice" style={{ marginBottom: 16 }}>
+              <strong>Step 1: create your account.</strong> Buying requires an account (Google, or
+              email + password) so your plan is yours on every device — no account, no checkout.{' '}
+              <a href="#/account" onClick={() => { try { sessionStorage.setItem('vectornest_return_to', 'activate'); } catch { /* ignore */ } }}>Create account / Sign in →</a>
+            </div>
+          )}
           <div className="grid-2">
             <div className="card price-card">
               <h3 style={{ marginTop: 0 }}>3-Day Pass</h3>
@@ -159,7 +194,7 @@ export default function Activate({ paid, onPaidChange }: { paid: boolean; onPaid
                 One-time payment — <strong>not</strong> a subscription, nothing auto-renews.
               </p>
               <button className="btn btn-primary" onClick={() => void buy('pass3')} disabled={busyPlan !== null}>
-                {busyPlan === 'pass3' ? 'Opening checkout…' : 'Get the 3-Day Pass — $3.99'}
+                {busyPlan === 'pass3' ? 'Opening checkout…' : user ? 'Get the 3-Day Pass — $3.99' : 'Create account to buy — $3.99'}
               </button>
             </div>
             <div className="card price-card">
@@ -170,13 +205,13 @@ export default function Activate({ paid, onPaidChange }: { paid: boolean; onPaid
                 This pays for itself against $9.99/month subscriptions in about 8 months — then it&apos;s yours.
               </p>
               <button className="btn btn-primary" onClick={() => void buy('lifetime')} disabled={busyPlan !== null}>
-                {busyPlan === 'lifetime' ? 'Opening checkout…' : 'Buy VectorNest — $79'}
+                {busyPlan === 'lifetime' ? 'Opening checkout…' : user ? 'Buy VectorNest — $79' : 'Create account to buy — $79'}
               </button>
             </div>
           </div>
           <p className="small muted" style={{ marginTop: 12 }}>
-            Checkout is handled by Creem. After payment you return here automatically and the app unlocks
-            itself — then sign in to attach the purchase to your account for use on any device.
+            Checkout is handled by Creem. After payment you return here automatically, the app unlocks
+            itself, and your plan attaches to your account — sign in on any device and it is there.
           </p>
           <div className="card" style={{ marginTop: 16 }}>
             <h3 style={{ marginTop: 0 }}>Already paid? Restore access</h3>

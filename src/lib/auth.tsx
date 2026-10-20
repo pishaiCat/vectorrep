@@ -1,11 +1,12 @@
 /**
  * Auth + plan context.
  *
- * Sign-in is OPTIONAL and exists for one reason: paid access that follows
- * the buyer across devices. Guests can still buy (checkout → return →
- * auto-unlock on that device via /api/verify-purchase); signing in and
- * claiming links the purchase to the account (/api/claim), and the plan
- * is then read from /api/access on every sign-in.
+ * An account is REQUIRED to buy: the Get access page routes signed-out
+ * visitors here first (Google, or email + password — no email-link
+ * sign-in). After checkout the purchase is claimed onto the account
+ * (/api/claim) and the plan is read from /api/access on every sign-in,
+ * so paid access follows the buyer across devices. The free tier and
+ * the free converter pages never need an account.
  *
  * If Firebase is not configured on this deployment (VITE_FIREBASE_*
  * missing), everything here no-ops: user stays null, plan stays 'free',
@@ -14,15 +15,14 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   GoogleAuthProvider,
-  isSignInWithEmailLink,
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
-  sendSignInLinkToEmail,
-  signInWithEmailLink,
+  signInWithEmailAndPassword,
   signInWithPopup,
   signOut as firebaseSignOut,
   type User,
 } from 'firebase/auth';
-import { EMAIL_FOR_SIGNIN_KEY, firebaseAuth, firebaseReady } from './firebaseClient';
+import { firebaseAuth, firebaseReady } from './firebaseClient';
 import { fetchJson } from './purchase';
 
 export type Plan = 'lifetime' | 'pass3' | 'free';
@@ -36,10 +36,8 @@ export interface AuthContextValue {
   firebaseReady: boolean;
   refreshPlan: () => Promise<void>;
   signInGoogle: () => Promise<void>;
-  sendEmailLink: (email: string) => Promise<void>;
-  /** Complete an email-link sign-in if the current URL is one. Returns
-   *  true when a sign-in was completed. Used by the Account page. */
-  completeEmailLink: (emailFromUser?: string) => Promise<boolean>;
+  signUpEmail: (email: string, password: string) => Promise<void>;
+  signInEmail: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -103,39 +101,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signInWithPopup(firebaseAuth, new GoogleAuthProvider());
   }, []);
 
-  const sendEmailLink = useCallback(async (email: string) => {
+  const signUpEmail = useCallback(async (email: string, password: string) => {
     if (!firebaseReady || !firebaseAuth) return;
-    const clean = email.trim().toLowerCase();
-    await sendSignInLinkToEmail(firebaseAuth, clean, {
-      url: `${window.location.origin}/#/account`,
-      handleCodeInApp: true,
-    });
-    try {
-      localStorage.setItem(EMAIL_FOR_SIGNIN_KEY, clean);
-    } catch {
-      // Storage unavailable — the Account page will ask for the email again.
-    }
+    await createUserWithEmailAndPassword(firebaseAuth, email.trim().toLowerCase(), password);
   }, []);
 
-  const completeEmailLink = useCallback(async (emailFromUser?: string): Promise<boolean> => {
-    if (!firebaseReady || !firebaseAuth) return false;
-    if (!isSignInWithEmailLink(firebaseAuth, window.location.href)) return false;
-    let email = emailFromUser?.trim().toLowerCase() || '';
-    if (!email) {
-      try {
-        email = localStorage.getItem(EMAIL_FOR_SIGNIN_KEY) ?? '';
-      } catch {
-        email = '';
-      }
-    }
-    if (!email) return false; // Account page prompts for the email, then retries.
-    await signInWithEmailLink(firebaseAuth, email, window.location.href);
-    try {
-      localStorage.removeItem(EMAIL_FOR_SIGNIN_KEY);
-    } catch {
-      // ignore
-    }
-    return true;
+  const signInEmail = useCallback(async (email: string, password: string) => {
+    if (!firebaseReady || !firebaseAuth) return;
+    await signInWithEmailAndPassword(firebaseAuth, email.trim().toLowerCase(), password);
   }, []);
 
   const signOut = useCallback(async () => {
@@ -152,8 +125,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     firebaseReady,
     refreshPlan,
     signInGoogle,
-    sendEmailLink,
-    completeEmailLink,
+    signUpEmail,
+    signInEmail,
     signOut,
   };
 

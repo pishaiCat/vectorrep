@@ -197,11 +197,19 @@ export default async function handler(req, res) {
         const confirmed = await confirmPaidViaCreem(env.apiKey, fields.checkoutId);
         if (confirmed) fields = confirmed;
       }
-      // Ignore checkouts for a different product (e.g. a second product
-      // added to the same Creem store later).
-      if (env.productId && fields.productId && fields.productId !== env.productId) {
-        res.status(200).json({ ignored: true, reason: 'Different product.' });
-        return;
+      // Map the product to a plan. Ignore checkouts for an unrelated
+      // product (e.g. a different product added to the same Creem store).
+      const pass3ProductId = process.env.CREEM_PRODUCT_ID_PASS3 || '';
+      let purchasePlan = 'lifetime';
+      if (fields.productId) {
+        if (pass3ProductId && fields.productId === pass3ProductId) {
+          purchasePlan = 'pass3';
+        } else if (env.productId && fields.productId === env.productId) {
+          purchasePlan = 'lifetime';
+        } else if (env.productId || pass3ProductId) {
+          res.status(200).json({ ignored: true, reason: 'Different product.' });
+          return;
+        }
       }
       const docId = fields.checkoutId || fields.orderId;
       if (!docId) {
@@ -216,7 +224,17 @@ export default async function handler(req, res) {
         return;
       }
       await ref.set({
-        ...purchaseRecord({ ...fields, status: 'paid', source: 'webhook' }),
+        ...purchaseRecord({
+          ...fields,
+          status: 'paid',
+          source: 'webhook',
+          plan: purchasePlan,
+          // 3-day pass: access ends 72h after purchase (write time ≈
+          // purchase time; createdAt below is a server timestamp).
+          planExpiresAtIso: purchasePlan === 'pass3'
+            ? new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString()
+            : null,
+        }),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });

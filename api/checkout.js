@@ -1,6 +1,9 @@
 /**
- * POST /api/checkout { email? } -> { checkout_url }
- * Creates a Creem checkout session for the $79 one-time VectorNest product.
+ * POST /api/checkout { email?, plan? } -> { checkout_url }
+ * Creates a Creem checkout session for one of the one-time products:
+ *   plan 'lifetime' (default) → CREEM_PRODUCT_ID        ($79)
+ *   plan 'pass3'              → CREEM_PRODUCT_ID_PASS3  ($3.99, 72h pass;
+ *                               400 JSON if that env var is not set yet)
  * success_url points back at /#/activate — Creem automatically appends
  * ?checkout_id=…&order_id=…&customer_id=…&product_id=…&signature=… to it,
  * so the app can auto-verify the purchase on return (no key to paste).
@@ -24,23 +27,32 @@ export default async function handler(req, res) {
     if (!isMethod(req, res, 'POST')) return;
     const env = requireEnv(res);
     if (!env) return;
-    if (!env.productId) {
-      res.status(500).json({ error: 'Payments are not configured (CREEM_PRODUCT_ID missing).' });
-      return;
-    }
     let email;
+    let plan = 'lifetime';
     try {
       const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
       email = typeof body.email === 'string' ? body.email : undefined;
+      if (body.plan === 'pass3') plan = 'pass3';
     } catch {
       email = undefined;
     }
+    let productId = env.productId;
+    if (plan === 'pass3') {
+      productId = process.env.CREEM_PRODUCT_ID_PASS3 || '';
+      if (!productId) {
+        res.status(400).json({ error: '3-day pass is not configured yet.' });
+        return;
+      }
+    } else if (!productId) {
+      res.status(500).json({ error: 'Payments are not configured (CREEM_PRODUCT_ID missing).' });
+      return;
+    }
     const successUrl = process.env.CREEM_SUCCESS_URL || `${appBaseUrl(req)}/#/activate`;
     const { ok, data } = await creemPost(env.apiKey, '/checkouts', {
-      product_id: env.productId,
+      product_id: productId,
       request_id: `vn-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       success_url: successUrl,
-      metadata: { source: 'vectornest-web' },
+      metadata: { source: 'vectornest-web', plan },
       ...(email ? { customer: { email } } : {}),
     });
     if (!ok) {

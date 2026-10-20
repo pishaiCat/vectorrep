@@ -12,6 +12,7 @@
  */
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getAuth as getAdminAuth } from 'firebase-admin/auth';
 
 let db = null;
 let initError = null;
@@ -114,6 +115,33 @@ export function getDb() {
   }
 }
 
+/**
+ * Returns the Firebase Auth (Admin) instance. Ensures the app is
+ * initialized by going through getDb() first. Throws if Firebase is not
+ * configured — callers return a JSON error.
+ */
+export function getAuth() {
+  getDb();
+  return getAdminAuth();
+}
+
+/**
+ * Verify a Firebase ID token from an `Authorization: Bearer <token>`
+ * header. Returns the decoded token ({ uid, email, ... }) or null when
+ * the header is missing/malformed or the token is invalid.
+ */
+export async function getAuthUser(req) {
+  const header = req.headers?.authorization || req.headers?.Authorization || '';
+  const token = typeof header === 'string' && header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+  if (!token) return null;
+  try {
+    const decoded = await getAuth().verifyIdToken(token);
+    return decoded && typeof decoded.uid === 'string' ? decoded : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Shape of a purchases/{id} document. Kept here so webhook + verify agree. */
 export function purchaseRecord({
   email = null,
@@ -124,6 +152,8 @@ export function purchaseRecord({
   checkout_id = null,
   order_id = null,
   source = 'webhook',
+  plan = null,
+  planExpiresAtIso = null,
 }) {
   return {
     email: typeof email === 'string' && email.includes('@') ? email.toLowerCase().trim() : null,
@@ -134,5 +164,9 @@ export function purchaseRecord({
     checkout_id: typeof checkout_id === 'string' ? checkout_id : null,
     order_id: typeof order_id === 'string' ? order_id : null,
     source,
+    // 'lifetime' | 'pass3' — mapped from the Creem product id by the webhook.
+    plan: plan === 'pass3' || plan === 'lifetime' ? plan : null,
+    // For pass3: ISO string of purchase time + 72h (null for lifetime).
+    planExpiresAtIso: typeof planExpiresAtIso === 'string' ? planExpiresAtIso : null,
   };
 }

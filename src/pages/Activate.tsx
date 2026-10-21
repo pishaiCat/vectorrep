@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchJson, getPaidEmail, verifyPurchaseByCheckout } from '../lib/purchase';
 import { useAuth } from '../lib/auth';
+import { navigateTo } from '../lib/router';
 
 /** Checkout/order ids Creem appends to the success URL. Creem may put them
- *  in the real query string (?checkout_id=…#/activate) or in the hash query
- *  (#/activate?checkout_id=…) depending on how it appends — check both. */
+ *  in the real query string (?checkout_id=…/activate) or in the hash query
+ *  (/activate?checkout_id=…) depending on how it appends — check both. */
 function returnIdsFromUrl(): { checkoutId: string | null; orderId: string | null } {
   const fromSearch = new URLSearchParams(window.location.search);
   const hashQuery = window.location.hash.split('?')[1] ?? '';
@@ -78,7 +79,7 @@ export default function Activate({ paid, onPaidChange }: { paid: boolean; onPaid
         // ignore
       }
       setMessage({ kind: 'error', text: 'Create your account first — it takes a few seconds, then you can buy and your plan attaches to the account automatically.' });
-      window.location.hash = '#/account';
+      navigateTo('/account');
       return;
     }
     setBusyPlan(planChoice);
@@ -137,7 +138,7 @@ export default function Activate({ paid, onPaidChange }: { paid: boolean; onPaid
           <h3 style={{ marginTop: 0 }}>Payment not confirmed yet</h3>
           <p className="muted">The payment may still be processing. Retry the check — or sign in and claim the purchase from your account.</p>
           <button className="btn" onClick={() => void retryReturn()}>Retry confirmation</button>{' '}
-          <a className="btn" href="#/account">Go to Account</a>
+          <a className="btn" href="/account">Go to Account</a>
         </div>
       )}
 
@@ -149,8 +150,8 @@ export default function Activate({ paid, onPaidChange }: { paid: boolean; onPaid
             want it on and claim it once, and the same access works on any device.
           </p>
           <p>
-            <a className="btn btn-primary" href="#/account">Sign in &amp; claim purchase</a>{' '}
-            <a className="btn" href="#/app">Open the Studio</a>
+            <a className="btn btn-primary" href="/account">Sign in &amp; claim purchase</a>{' '}
+            <a className="btn" href="/app">Open the Studio</a>
           </p>
         </div>
       )}
@@ -170,10 +171,10 @@ export default function Activate({ paid, onPaidChange }: { paid: boolean; onPaid
           <p className="small muted">Unlimited conversions · Clean SVG · DXF · Vector PDF · PNG up to 3x · Batch ZIP. 14-day refunds — contact support with your order email.</p>
           {!user && (
             <p className="small muted">
-              Using another device? <a href="#/account">Sign in and claim your purchase</a> there — no key to copy or paste.
+              Using another device? <a href="/account">Sign in and claim your purchase</a> there — no key to copy or paste.
             </p>
           )}
-          <p><a className="btn btn-primary" href="#/app">Open the Studio</a></p>
+          <p><a className="btn btn-primary" href="/app">Open the Studio</a></p>
         </div>
       ) : (
         <>
@@ -181,7 +182,7 @@ export default function Activate({ paid, onPaidChange }: { paid: boolean; onPaid
             <div className="notice" style={{ marginBottom: 16 }}>
               <strong>Step 1: create your account.</strong> Buying requires an account (Google, or
               email + password) so your plan is yours on every device — no account, no checkout.{' '}
-              <a href="#/account" onClick={() => { try { sessionStorage.setItem('vectornest_return_to', 'activate'); } catch { /* ignore */ } }}>Create account / Sign in →</a>
+              <a href="/account" onClick={() => { try { sessionStorage.setItem('vectornest_return_to', 'activate'); } catch { /* ignore */ } }}>Create account / Sign in →</a>
             </div>
           )}
           <div className="grid-2">
@@ -219,14 +220,14 @@ export default function Activate({ paid, onPaidChange }: { paid: boolean; onPaid
               Sign in with the email you used at checkout and claim your purchase — your plan
               (Lifetime or 3-Day Pass) attaches to your account and works on any device.
             </p>
-            <p><a className="btn btn-primary" href="#/account">Go to Account — sign in &amp; claim</a></p>
+            <p><a className="btn btn-primary" href="/account">Go to Account — sign in &amp; claim</a></p>
           </div>
         </>
       )}
       {message && <div className={message.kind === 'error' ? 'error' : 'success'} style={{ marginTop: 16 }}>{message.text}</div>}
       <p className="small muted" style={{ marginTop: 16 }}>
         Not paid yet? The free tier (10 conversions/day, clean SVG, PNG up to 1024px) needs nothing —{' '}
-        <a href="#/app">open the Studio</a> or try the <a href="#/free/png-to-svg">free converters</a>.
+        <a href="/app">open the Studio</a> or try the <a href="/free/png-to-svg">free converters</a>.
       </p>
     </div>
   );

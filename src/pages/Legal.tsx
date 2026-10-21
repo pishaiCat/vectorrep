@@ -20,7 +20,6 @@ export default function Legal({ page }: { page: 'privacy' | 'terms' | 'license' 
           <li>A paid flag + the email you restored with (localStorage) — this is how the app knows this device is unlocked. No key.</li>
           <li>An account (Firebase Auth — Google, or email + password) is required to buy a plan, so paid access can follow you across devices. If you sign in, we store your email and your plan (Lifetime / 3-Day Pass expiry) — never your images.</li>
           <li>Your free-tier daily conversion counter (localStorage, resets at midnight).</li>
-          <li>Benchmark email signups, if you use that form (localStorage only).</li>
         </ul>
         <h2>What is stored on our server</h2>
         <ul>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../lib/auth';
 import { fetchJson } from '../lib/purchase';
+import { navigateTo } from '../lib/router';
 
 function planLabel(plan: string, active: boolean, expiresAt: string | null): string {
   if (plan === 'lifetime') return 'Lifetime — full access, forever';
@@ -57,7 +58,7 @@ export default function Account() {
     } catch {
       // ignore
     }
-    window.location.hash = '#/activate';
+    navigateTo('/activate');
   };
 
   const emailPassword = async (e: React.FormEvent) => {
@@ -136,7 +137,7 @@ export default function Account() {
           <strong>Sign-in is not configured yet on this deployment.</strong>
           <p className="small muted" style={{ marginBottom: 0 }}>
             Buying is unavailable until accounts are configured. The free tier still works —{' '}
-            <a href="#/app">open the Studio</a>.
+            <a href="/app">open the Studio</a>.
           </p>
         </div>
       ) : loading ? (
@@ -159,9 +160,9 @@ export default function Account() {
           </form>
           <p className="small muted" style={{ marginTop: 12, marginBottom: 0 }}>
             {mode === 'signup' ? (
-              <>Already have an account? <a href="#/account" onClick={(e) => { e.preventDefault(); setMode('signin'); setMessage(null); }}>Sign in</a></>
+              <>Already have an account? <a href="/account" onClick={(e) => { e.preventDefault(); setMode('signin'); setMessage(null); }}>Sign in</a></>
             ) : (
-              <>New here? <a href="#/account" onClick={(e) => { e.preventDefault(); setMode('signup'); setMessage(null); }}>Create an account</a></>
+              <>New here? <a href="/account" onClick={(e) => { e.preventDefault(); setMode('signup'); setMessage(null); }}>Create an account</a></>
             )}
           </p>
           <p className="small muted">
@@ -186,11 +187,11 @@ export default function Account() {
             <button className="btn" onClick={() => void claim()} disabled={claiming}>
               {claiming ? 'Checking purchases…' : 'Claim a purchase'}
             </button>
-            <a className="btn btn-primary" href="#/app">Open the Studio</a>
+            <a className="btn btn-primary" href="/app">Open the Studio</a>
             <button className="btn" onClick={() => void signOut()}>Sign out</button>
           </div>
           {plan === 'free' && (
-            <p className="small muted">No plan yet? <a href="#/activate">3-Day Pass $3.99 or Lifetime $79</a> — one-time payments, no subscription.</p>
+            <p className="small muted">No plan yet? <a href="/activate">3-Day Pass $3.99 or Lifetime $79</a> — one-time payments, no subscription.</p>
           )}
         </div>
       )}

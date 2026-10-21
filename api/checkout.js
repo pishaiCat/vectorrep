@@ -4,7 +4,7 @@
  *   plan 'lifetime' (default) → CREEM_PRODUCT_ID        ($79)
  *   plan 'pass3'              → CREEM_PRODUCT_ID_PASS3  ($3.99, 72h pass;
  *                               400 JSON if that env var is not set yet)
- * success_url points back at /#/activate — Creem automatically appends
+ * success_url points back at /activate — Creem automatically appends
  * ?checkout_id=…&order_id=…&customer_id=…&product_id=…&signature=… to it,
  * so the app can auto-verify the purchase on return (no key to paste).
  * Always returns JSON, even on unexpected errors.
@@ -47,7 +47,7 @@ export default async function handler(req, res) {
       res.status(500).json({ error: 'Payments are not configured (CREEM_PRODUCT_ID missing).' });
       return;
     }
-    const successUrl = process.env.CREEM_SUCCESS_URL || `${appBaseUrl(req)}/#/activate`;
+    const successUrl = process.env.CREEM_SUCCESS_URL || `${appBaseUrl(req)}/activate`;
     const { ok, data } = await creemPost(env.apiKey, '/checkouts', {
       product_id: productId,
       request_id: `vn-${Date.now()}-${Math.random().toString(36).slice(2)}`,

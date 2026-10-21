@@ -421,7 +421,7 @@ export default function Studio({ paid, onPaidChange }: { paid: boolean; onPaidCh
           {batch
             ? <div><div className="progress"><div style={{ width: `${(batch.done / batch.total) * 100}%` }} /></div><p className="small">{batch.done}/{batch.total} traced</p><button className="btn btn-sm" onClick={cancelBatch}>Cancel batch</button></div>
             : <button className="btn btn-block" onClick={() => void exportBatchZip()} disabled={queue.length === 0 || !paid} title={paid ? '' : 'Paid feature'}>Download batch ZIP (SVG){!paid && ' 🔒'}</button>}
-          {!paid && <p className="small muted">DXF, PDF and batch ZIP need a plan. <a href="#/activate">3-Day Pass $3.99 / Lifetime $79</a>.</p>}
+          {!paid && <p className="small muted">DXF, PDF and batch ZIP need a plan. <a href="/activate">3-Day Pass $3.99 / Lifetime $79</a>.</p>}
         </aside>
       </div>
     </div>

@@ -8,8 +8,7 @@ export default function Landing() {
           tuned for Cricut, Glowforge, xTool and Omtech. Your images never leave your device.
         </p>
         <div className="cta-row">
-          <a className="btn btn-primary" href="#/app">Try the free demo — no signup</a>
-          <a className="btn" href="#/benchmark">See the benchmark</a>
+          <a className="btn btn-primary" href="/app">Try the free demo — no signup</a>
         </div>
         <p className="proof">
           Free tier: 10 conversions a day, clean SVG + PNG up to 1024px. Paid: unlimited, DXF, PDF, batch ZIP —
@@ -19,10 +18,10 @@ export default function Landing() {
 
       <h2>Free converters</h2>
       <div className="grid-3">
-        <div className="card"><h3><a href="#/free/png-to-svg">PNG to SVG</a></h3><p className="muted">Convert a PNG to a clean vector SVG — free, no upload, no watermark.</p></div>
-        <div className="card"><h3><a href="#/free/jpg-to-svg">JPG to SVG</a></h3><p className="muted">Turn a JPEG logo or artwork into a scalable SVG, right in your browser.</p></div>
-        <div className="card"><h3><a href="#/free/image-to-vector">Image to Vector</a></h3><p className="muted">Any image — PNG, JPG or WebP — traced into machine-ready vector paths.</p></div>
-        <div className="card"><h3><a href="#/free/webp-to-svg">WebP to SVG</a></h3><p className="muted">WebP is for the web. SVG is for cutting, engraving and print. Convert free.</p></div>
+        <div className="card"><h3><a href="/free/png-to-svg">PNG to SVG</a></h3><p className="muted">Convert a PNG to a clean vector SVG — free, no upload, no watermark.</p></div>
+        <div className="card"><h3><a href="/free/jpg-to-svg">JPG to SVG</a></h3><p className="muted">Turn a JPEG logo or artwork into a scalable SVG, right in your browser.</p></div>
+        <div className="card"><h3><a href="/free/image-to-vector">Image to Vector</a></h3><p className="muted">Any image — PNG, JPG or WebP — traced into machine-ready vector paths.</p></div>
+        <div className="card"><h3><a href="/free/webp-to-svg">WebP to SVG</a></h3><p className="muted">WebP is for the web. SVG is for cutting, engraving and print. Convert free.</p></div>
         <div className="card"><h3>Free tier, honestly</h3><p className="muted">10 conversions a day in the Studio too — clean SVG, all presets, PNG up to 1024px. No signup.</p></div>
         <div className="card"><h3>Why free?</h3><p className="muted">Because you should verify quality before paying anyone. Paid adds DXF, batch and no cap.</p></div>
       </div>
@@ -43,8 +42,8 @@ export default function Landing() {
           <h3>VectorNest</h3>
           <p className="price">$79 <small>once, forever (v1.x)</small></p>
           <p className="muted">Unlimited conversions · Full SVG · DXF · Vector PDF · PNG up to 3x · Batch ZIP (20 images) · Use on any device you sign in on · 14-day refunds</p>
-          <p><a className="btn btn-primary" href="#/activate">Get VectorNest — $79</a></p>
-          <p className="small muted">Just one project? There&apos;s also a <a href="#/activate">3-Day Pass for $3.99</a> — everything unlocked for 72 hours. Checkout via Creem. Your receipt is emailed automatically.</p>
+          <p><a className="btn btn-primary" href="/activate">Get VectorNest — $79</a></p>
+          <p className="small muted">Just one project? There&apos;s also a <a href="/activate">3-Day Pass for $3.99</a> — everything unlocked for 72 hours. Checkout via Creem. Your receipt is emailed automatically.</p>
         </div>
         <div className="card">
           <h3>Why one payment beats a subscription</h3>
@@ -57,18 +56,6 @@ export default function Landing() {
         </div>
       </div>
 
-      <h2>Benchmark teaser</h2>
-      <div className="card">
-        <p>
-          In Phase 0, the official VTracer engine scored <strong>19/20 “good enough for cutting”</strong> on
-          20 synthetic test images — 18 good, 1 acceptable, 1 fail. <strong>Read that carefully:</strong> those
-          results were earned by VTracer on synthetic images, not by this MVP&apos;s engine and not on real
-          customer files. The MVP ships with ImageTracer (pure JS, client-side) while the VTracer web-WASM
-          swap is prepared. Full table, methodology and caveats on the{' '}
-          <a href="#/benchmark">benchmark page</a>.
-        </p>
-      </div>
-
       <h2>Frequently asked questions</h2>
       <div className="faq">
         <details><summary>Is my data uploaded anywhere?</summary><p>No. Tracing and every export run in your browser, on your CPU. The only network requests VectorNest makes are the purchase check when you unlock or restore — and they send only your checkout ID or email, never images. Watch the Network tab while you trace.</p></details>
@@ -76,7 +63,7 @@ export default function Landing() {
         <details><summary>Which machines does it support?</summary><p>Anything that reads SVG or DXF: Cricut and Silhouette (SVG), Glowforge, xTool and Omtech lasers (SVG/DXF), and most CNC and sign software (DXF R12).</p></details>
         <details><summary>What does the free tier include?</summary><p>10 conversions per day, all presets, a clean SVG download (no watermark) and PNG export up to 1024px. Paid (3-Day Pass $3.99 or Lifetime $79) unlocks unlimited conversions, DXF, vector PDF, PNG up to 3x, and batch ZIP.</p></details>
         <details><summary>What is the refund policy?</summary><p>14 days, no questions asked. The free tier exists so you can verify quality before paying — but if it is not right for you, you get your money back.</p></details>
-        <details><summary>What engine does the MVP use?</summary><p>ImageTracer (pure JS, client-side). The Phase 0 benchmark used the official VTracer engine in Node; its npm build is Node-targeted and cannot run in a browser build, so a web-target VTracer swap is planned. We do not claim VTracer output for the MVP.</p></details>
+        <details><summary>What engine does the MVP use?</summary><p>ImageTracer (pure JS, client-side). Phase 0 testing used the official VTracer engine in Node; its npm build is Node-targeted and cannot run in a browser build, so a web-target VTracer swap is planned. We do not claim VTracer output for the MVP.</p></details>
       </div>
     </div>
   );

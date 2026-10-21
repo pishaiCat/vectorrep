@@ -153,9 +153,9 @@ export default function FreeTool({ slug }: { slug: FreeSlug }) {
           Still no uploads — everything runs in your browser.
         </p>
         <p>
-          <a className="btn btn-primary" href="#/activate">3-Day Pass — $3.99</a>{' '}
-          <a className="btn" href="#/activate">Lifetime — $79 once</a>{' '}
-          <a className="btn" href="#/app">Open the Studio</a>
+          <a className="btn btn-primary" href="/activate">3-Day Pass — $3.99</a>{' '}
+          <a className="btn" href="/activate">Lifetime — $79 once</a>{' '}
+          <a className="btn" href="/app">Open the Studio</a>
         </p>
       </div>
 
@@ -169,9 +169,9 @@ export default function FreeTool({ slug }: { slug: FreeSlug }) {
       <h2>More free converters</h2>
       <p className="free-links">
         {others.map((s) => (
-          <a key={s} className="btn btn-sm" href={`#/free/${s}`}>{PAGES[s].h1.split(' — ')[0]}</a>
+          <a key={s} className="btn btn-sm" href={`/free/${s}`}>{PAGES[s].h1.split(' — ')[0]}</a>
         ))}
-        {' '}<a className="btn btn-sm" href="#/app">VectorNest Studio — all formats</a>
+        {' '}<a className="btn btn-sm" href="/app">VectorNest Studio — all formats</a>
       </p>
     </div>
   );

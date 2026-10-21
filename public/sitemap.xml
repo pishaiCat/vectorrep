@@ -6,22 +6,22 @@
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://vectornest-six.vercel.app/#/free/png-to-svg</loc>
+    <loc>https://vectornest-six.vercel.app/free/png-to-svg</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://vectornest-six.vercel.app/#/free/jpg-to-svg</loc>
+    <loc>https://vectornest-six.vercel.app/free/jpg-to-svg</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://vectornest-six.vercel.app/#/free/image-to-vector</loc>
+    <loc>https://vectornest-six.vercel.app/free/image-to-vector</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://vectornest-six.vercel.app/#/free/webp-to-svg</loc>
+    <loc>https://vectornest-six.vercel.app/free/webp-to-svg</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

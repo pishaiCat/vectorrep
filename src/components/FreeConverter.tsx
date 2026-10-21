@@ -121,9 +121,9 @@ export default function FreeConverter({ accept, inputLabel, unlimited }: FreeCon
           <h3 style={{ marginTop: 0 }}>You&apos;ve used today&apos;s {FREE_DAILY_LIMIT} free conversions</h3>
           <p className="muted">Come back tomorrow — or skip the wait. The Studio adds DXF, vector PDF, PNG up to 3x, batch ZIP and machine presets (Cricut, Glowforge, xTool), with no daily cap.</p>
           <p>
-            <a className="btn btn-primary" href="#/activate">3-Day Pass — $3.99</a>{' '}
-            <a className="btn" href="#/activate">Lifetime — $79 once</a>{' '}
-            <a className="btn" href="#/app">Open the Studio</a>
+            <a className="btn btn-primary" href="/activate">3-Day Pass — $3.99</a>{' '}
+            <a className="btn" href="/activate">Lifetime — $79 once</a>{' '}
+            <a className="btn" href="/app">Open the Studio</a>
           </p>
         </div>
       )}
@@ -148,7 +148,7 @@ export default function FreeConverter({ accept, inputLabel, unlimited }: FreeCon
       {svg && status === 'done' && (
         <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <button className="btn btn-primary" onClick={download}>Download SVG (free, no watermark)</button>
-          <span className="small muted">Need DXF, PDF or batch? <a href="#/app">The Studio does all of it</a>.</span>
+          <span className="small muted">Need DXF, PDF or batch? <a href="/app">The Studio does all of it</a>.</span>
         </div>
       )}
     </div>

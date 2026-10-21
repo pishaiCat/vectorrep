@@ -44,11 +44,11 @@ function Shell() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  // Legacy links: old hash URLs (//free/png-to-svg) redirect once to the
+  // Legacy links: old hash URLs (/#/free/png-to-svg) redirect once to the
   // clean path URL, preserving any query string inside the hash.
   useEffect(() => {
     const hash = window.location.hash;
-    if (hash.startsWith('/')) {
+    if (hash.startsWith('#/')) {
       const target = hash.slice(1);
       window.history.replaceState(null, '', target.startsWith('/') ? target : `/${target}`);
       setRoute(currentRoute());
